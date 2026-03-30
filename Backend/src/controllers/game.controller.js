@@ -222,37 +222,39 @@ export const acceptDeal = async (req, res) => {
         const userId = req.user._id;
         const { sessionId } = req.body;
 
-        const session = await SessionModel.findOne({
-            _id: sessionId,
-            userId,
-            status: "active",
-        });
+        // 1. ATOMIC UPDATE (Sabse zaroori): Ek hi query mein dhundo aur update karo. 
+        // Isse "Check-then-Act" wali race condition khatam ho jati hai.
+        const session = await SessionModel.findOneAndUpdate(
+            { 
+                _id: sessionId, 
+                userId, 
+                status: "active" // Sirf tabhi update karega agar active hai
+            },
+            { 
+                $set: { status: "deal" } 
+            },
+            { 
+                returnDocument: 'after', // Fixes Mongoose deprecation warning
+                runValidators: true 
+            }
+        );
 
+        // Agar session nahi mila ya status pehle se badal chuka hai (double-click case)
         if (!session) {
             return res.status(404).json({
                 success: false,
-                message: "Session nahi mila!",
+                message: "Deal pehle hi accept ho chuki hai ya session valid nahi hai!",
             });
         }
 
-        const updatedSession = await SessionModel.findOneAndUpdate(
-            { _id: sessionId, status: "active" },
-            { $set: { status: "deal", finalDealPrice: session.currentOffer } },
-            { new: true }
-        );
-        
-        if (!updatedSession) {
-             return res.status(400).json({
-                 success: false,
-                 message: "Yeh deal pehle hi accept ho chuki hai!",
-             });
-        }
-        
-        session.status = "deal";
+        // 2. LOGIC SYNC: Final price set karna database state ke hisab se
         session.finalDealPrice = session.currentOffer;
+        await session.save(); // Atomic update ke baad final price lock karna
 
+        // 3. SCORE CALCULATION
         const scoreData = calculateScore(session);
 
+        // 4. LEADERBOARD ENTRY
         const entry = await leaderboardModel.create({
             userId,
             playerName: req.user.name || req.user.email,
@@ -263,7 +265,7 @@ export const acceptDeal = async (req, res) => {
             baseScore: scoreData.baseScore,
             efficiencyBonus: scoreData.efficiencyBonus,
             totalScore: scoreData.totalScore,
-            roundsUsed: session.currentRound - 1,
+            roundsUsed: Math.max(0, session.currentRound - 1),
             sessionId: session._id,
             sellerId: session.sellerId,
             productId: session.productId,
@@ -275,20 +277,17 @@ export const acceptDeal = async (req, res) => {
             scoreData: {
                 dealPrice: session.finalDealPrice,
                 savedAmount: scoreData.savedAmount,
-                savedPercent: scoreData.savedPercent,
-                baseScore: scoreData.baseScore,
-                efficiencyBonus: scoreData.efficiencyBonus,
                 totalScore: scoreData.totalScore,
-                roundsUsed: session.currentRound - 1,
+                roundsUsed: Math.max(0, session.currentRound - 1),
             },
             leaderboardId: entry._id,
         });
 
     } catch (error) {
-        console.error("acceptDeal error:", error);
+        console.error("Critical acceptDeal error:", error);
         res.status(500).json({
             success: false,
-            message: "Deal save nahi ho payi!",
+            message: "Internal Server Error: Deal process nahi ho payi.",
         });
     }
 };

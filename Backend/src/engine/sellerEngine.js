@@ -51,34 +51,39 @@ export const applyPriceDrop = (intent, session) => {
   if (remaining <= 0) return 0;
 
   const strengthMap = {
-    walk_away: "strong", competitor: "strong", cash_offer: "strong", specific_price: "strong",
-    budget: "medium", emotional: "medium", logical: "medium",
-    generic: "weak", friendly: "weak"
+    walk_away: "strong", competitor: "strong", cash_offer: "strong", 
+    specific_price: "strong", budget: "medium", emotional: "medium", 
+    logical: "medium", generic: "weak", friendly: "weak"
   };
   const strength = strengthMap[intent?.tactic] || "weak";
 
-  // Early resistance (Round 1 tak Chacha hilega nahi)
+  // Early Game: Round 1 tak Chacha hilega nahi (unless it's a very strong tactic)
   if (session.currentRound <= 1 && strength !== "strong") return 0;
 
-  // Late Game Resistance (Round 6 ke baad Chacha ziddi ho jata hai)
-  const roundPenalty = session.currentRound >= 6 ? 0.4 : 1;
-
-  const moodFactor =
-    session.moodScore >= 4 ? 1.2 :
-    session.moodScore >= 2 ? 1 : 0.7;
-
+  // Multipliers
+  const roundPenalty = session.currentRound >= 6 ? 0.4 : 1; // Late game mein ziddi
+  const moodFactor = session.moodScore >= 4 ? 1.2 : (session.moodScore >= 2 ? 1 : 0.7);
   const stubbornFactor = 1 - ((session?.stubbornness || 5) / 10) * 0.4;
 
+  // Base Calculation
   let drop = remaining * (intent?.dropPercent || 0.01) * moodFactor * stubbornFactor * roundPenalty;
 
-  if (strength === "weak") drop = Math.min(drop, 150);
+  // 🛡️ THE SENIOR FIX: Cap the drop to 30% of the remaining gap
+  // Taaki game jaldi khatam na ho aur Chacha "Easy" na lage
+  drop = Math.min(drop, remaining * 0.3);
 
-  // Repeat punishment
-  const lastMsgs = (session?.messages || []).slice(-3).map(m => m.content);
-  if (lastMsgs.includes(intent?.playerMessage)) drop *= 0.2;
+  if (strength === "weak") drop = Math.min(drop, 200); // Weak tactics par max 200 ka drop
 
+  // Repeat Message Punishment (Logic Audit fix)
+  const lastMsgs = (session?.messages || []).slice(-3).filter(m => m.role === "user").map(m => m.content);
+  if (lastMsgs.includes(intent?.playerMessage)) {
+      drop *= 0.1; // 90% discount kat lo agar wahi baat firse boli
+  }
+
+  // Rounding to nearest 100 for "Bazaar Feel"
   drop = Math.round(drop / 100) * 100;
 
+  // Final check against Floor Price
   if (session.currentOffer - drop < session.floorPrice) {
     drop = session.currentOffer - session.floorPrice;
   }
@@ -135,7 +140,7 @@ export const calculateScore = (session) => {
   const baseScore = Math.round((saved / session.listPrice) * 1000);
   const efficiencyBonus = Math.max(0, (session.maxRounds - session.currentRound) * 50);
   const totalScore = baseScore + efficiencyBonus;
-  
+
   return {
     savedAmount: saved,
     savedPercent,

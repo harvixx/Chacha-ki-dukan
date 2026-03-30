@@ -8,63 +8,48 @@ import app from "./src/app.js";
 const PORT = process.env.PORT || 3000;
 let isDbConnected = false;
 
+// 🔗 Create server
 const httpServer = http.createServer(app);
-initSocket(httpServer)
-httpServer.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+
+// 🔌 Init socket
+initSocket(httpServer);
+
+// 🚀 Start server
+httpServer.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
+// 🧠 DB Init (NON-BLOCKING)
 async function initDb() {
-    try {
-        await connectToDb();
-        isDbConnected = true;
-        console.log("✅ Database connected");
-        await seedData();
-    } catch (err) {
-        console.error("❌ DB connection failed:", err.message);
+  try {
+    await connectToDb();
+    isDbConnected = true;
+    console.log("✅ Database connected");
 
-
-    }
+    await seedData();
+    console.log("✅ Database already seeded.");
+  } catch (err) {
+    console.error("❌ DB connection failed:", err.message);
+  }
 }
 
 initDb();
 
-
+// ❤️ Health check route
 app.get("/health", (req, res) => {
-    res.status(200).json({
-        status: "OK",
-        db: isDbConnected ? "connected" : "disconnected",
-        uptime: process.uptime(),
-        timestamp: new Date()
-    });
+  res.status(200).json({
+    status: "OK",
+    db: isDbConnected ? "connected" : "disconnected",
+    uptime: process.uptime(),
+    timestamp: new Date(),
+  });
 });
 
-
+// 🛡️ Error handling (NO CRASH)
 process.on("uncaughtException", (err) => {
-    console.error("💥 Uncaught Exception:", err.message);
-    process.exit(1); // crash → let process manager restart
+  console.error("💥 Uncaught Exception:", err.message);
 });
 
 process.on("unhandledRejection", (err) => {
-    console.error("💥 Unhandled Rejection:", err.message);
-    process.exit(1);
+  console.error("💥 Unhandled Rejection:", err?.message || err);
 });
-
-
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
-
-function shutdown() {
-    console.log("🛑 Shutting down server...");
-
-    httpServer.close(() => {
-        console.log("💤 Server closed");
-
-        process.exit(0);
-    });
-
-    setTimeout(() => {
-        console.error("⚠️ Force shutdown");
-        process.exit(1);
-    }, 10000);
-}
