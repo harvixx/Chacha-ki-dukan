@@ -119,7 +119,7 @@ const GameScreen = () => {
   const TACTICS = [
     { label: 'Main ja raha hoon!', color: 'border-red-500/30 text-red-300 bg-red-500/5' },
     { label: 'Cash dunga abhi!', color: 'border-green-500/30 text-green-300 bg-green-500/5' },
-    { label: 'Dusri dukaan hai meri', color: 'border-amber-500/30 text-amber-300 bg-amber-500/5' },
+    { label: 'Purana customer hoon', color: 'border-amber-500/30 text-amber-300 bg-amber-500/5' },
   ];
 
   return (
