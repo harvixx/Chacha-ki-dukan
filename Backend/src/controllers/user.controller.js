@@ -68,7 +68,7 @@ export const updateUserSession = async (req, res) => {
         }
 
         // 1. Update User (Atomic)
-        const updatedUser = await User.findByIdAndUpdate(userId, updateQuery, { new: true });
+        const updatedUser = await User.findByIdAndUpdate(userId, updateQuery, { returnDocument: "after" });
 
         const numericPercent = parseFloat(savedPercent) || 0;
 
