@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700;900&family=Noto+Serif+Devanagari:wght@400;700;900&family=Noto+Sans+Devanagari:wght@100;400;700;900&family=Inter:wght@300;400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+}
+
+@layer components {
+  .neon-glow-chacha {
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.4);
+  }
+  
+  .glass-card {
+    background: rgba(13, 18, 32, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(30, 58, 95, 0.5);
+  }
+  
+  .neon-glow-blue {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  }
+  
+  .hindi-text {
+    font-family: 'Noto Serif Devanagari', serif;
+  }
+  
+  .neon-glow-gold {
+    filter: drop-shadow(0 0 8px #fbbf24);
+  }
+  
+  .neon-glow-silver {
+    filter: drop-shadow(0 0 8px #94a3b8);
+  }
+  
+  .neon-glow-bronze {
+    filter: drop-shadow(0 0 8px #b45309);
+  }
+
+  .grain-texture {
+    background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCUzP5jnWIfnI_nwQzMwiKDB7-UpZijDnepll5FyeKvEv-iJDh0YNZ6cMwQ8QZYWbqTraYi5dkLcVTRr65oHjriggLhhtHilWYEqYJC7ug4jAAiND6wNFl1-94Sq6YMUDLpqWQyEr0PI3hGG17bYWV_lQq1vp9J4suwky4nM9ZtROMmp8-lUQBqZfMe4NLJfx5ODmExuzrSoG0El6i9ldK8zww_grerZKYo3kqnLojKU3GIw-4Amg1whh-0n8_Qb10uKpVTQu1hJm8');
+    opacity: 0.05;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #284678;
+    border-radius: 10px;
+  }
+
+  .glow-sm {
+    text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+  }
+  .success-glow {
+    filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.4));
+  }
+  .neon-border {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.15), inset 0 0 5px rgba(59, 130, 246, 0.05);
+  }
+  .confetti-overlay {
+    background-image: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
+  }
+  .red-vignette {
+    background: radial-gradient(circle, transparent 40%, rgba(239, 68, 68, 0.08) 100%);
+  }
+  .receipt-shadow {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.15);
+  }
+
+  
+  .neon-text-blue {
+    text-shadow: 0 0 8px rgba(59,130,246,0.6);
+  }
+  
+  .glass-panel {
+    backdrop-filter: blur(20px);
+    background: rgba(15, 19, 29, 0.7);
+  }
+  
+  .ticker-wrap {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  
+  .ticker-content {
+    display: inline-block;
+    animation: ticker-anim 30s linear infinite;
+  }
+  
+  @keyframes ticker-anim {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  
+  .neon-flicker {
+    animation: flicker 3s linear infinite;
+  }
+  
+  @keyframes flicker {
+    0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
+    20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.4; }
+  }
+
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  .amber-glow-btn {
+    box-shadow: 0 0 15px rgba(217, 119, 6, 0.4);
+  }
+  
+  .amber-glow-btn:hover {
+    box-shadow: 0 0 25px rgba(217, 119, 6, 0.6);
+  }
+  
+  .dust-layer {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 100px 100px;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+}
+
+@layer base {
+  body {
+    min-height: max(884px, 100dvh);
+  }
+  
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #050810; }
+  ::-webkit-scrollbar-thumb { background: #202632; border-radius: 10px; }
+
+  .scroll-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
