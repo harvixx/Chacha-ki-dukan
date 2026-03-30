@@ -32,7 +32,7 @@ export const register = async (req, res) => {
 
     const verificationUrl = `${process.env.BASE_URL}/verify-email?token=${emailToken}`;
 
-    await sendEmail({
+     sendEmail({
       to: user.email,
       subject: "Verify your email – Chacha Ki Dukan 🛒🚀",
       html: `
@@ -190,7 +190,7 @@ export const login = async (req, res) => {
 
       const verificationUrl = `${process.env.BASE_URL}/verify-email?token=${emailToken}`;
 
-      await sendEmail({
+       sendEmail({
       to: user.email,
       subject: "Verify your email – Chacha Ki Dukan 🛒🚀",
       html: `
