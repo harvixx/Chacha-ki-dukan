@@ -4,6 +4,7 @@ import connectToDb from "./src/config/database.js";
 import { initSocket } from "./src/sockets/server.socket.js";
 import seedData from "./src/utils/seedDatabase.js";
 import app from "./src/app.js";
+import { verifyBrevoConnection } from "./src/services/mail.service.js";
 
 const PORT = process.env.PORT || 3000;
 let isDbConnected = false;
@@ -25,8 +26,8 @@ async function initDb() {
     await connectToDb();
     isDbConnected = true;
     console.log("✅ Database connected");
-
     await seedData();
+    verifyBrevoConnection()
     console.log("✅ Database already seeded.");
   } catch (err) {
     console.error("❌ DB connection failed:", err.message);
