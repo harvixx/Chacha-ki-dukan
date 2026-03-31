@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logoutState } from "../../../app/store/slices/authSlice";
-import { logout } from "../services/auth.api";
+import { logoutapi } from "../services/auth.api";
 
 export const useLogout = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,7 +13,7 @@ export const useLogout = () => {
     setIsLoading(true);
     try {
       
-      await logout; 
+      await logoutapi(); 
       // 2. Redux state clear karo
       dispatch(logoutState());
 

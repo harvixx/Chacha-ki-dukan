@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUser } from "../../app/store/slices/authSlice";
@@ -20,6 +20,11 @@ import PublicRoute from "../../features/auth/routes/PublicRoute.jsx";
 
 // Home/Game Pages
 import LandingPage from "../../features/home/pages/LandingPage.jsx";
+import SellersPage from "../../features/home/pages/SellersPage.jsx";
+import ProductSelection from "../../features/home/pages/ProductSelection.jsx";
+import GameScreen from "../../features/home/pages/GameScreen.jsx";
+import ResultScreen from "../../features/home/pages/ResultScreen.jsx";
+import Leaderboard from "../../features/home/pages/Leaderboard.jsx";
 
 // ... (baki imports same rahenge)
 
@@ -51,7 +56,7 @@ const AppRoutes = () => {
       <Route path="/" element={<LandingPage />} />
 
       {/* 🔐 Protected Routes - Only for logged in users */}
-      <Route path="/sellers" element={<ProtectedRoute><SellersPage /></ProtectedRoute>} />
+      <Route path="/sellers" element={<ProtectedRoute><SellersPage/></ProtectedRoute>} />
       <Route path="/products/:sellerId" element={<ProtectedRoute><ProductSelection /></ProtectedRoute>} />
       <Route path="/play" element={<ProtectedRoute><GameScreen /></ProtectedRoute>} />
       <Route path="/result" element={<ProtectedRoute><ResultScreen /></ProtectedRoute>} />

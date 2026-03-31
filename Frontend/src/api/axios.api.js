@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL ;
-const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL ;
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "http://localhost:3000";
+
+// Debugging ke liye (Browser console mein check kar lena)
+console.log("🔗 API Base URL:", BASE_URL);
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -16,15 +19,16 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Check karo ki 401 aaya hai, pehli baar fail hui hai, aur yeh khud refresh-token wali API nahi hai
+    // Token Refresh Logic
     if (
       error.response?.status === 401 && 
       !originalRequest._retry &&
-      !originalRequest.url.includes('refresh-token')
+      !originalRequest.url.includes('refresh') // Check correct endpoint
     ) {
       originalRequest._retry = true;
 
       try {
+        // ✅ Axios instance use karne ki jagah direct axios use karein refresh ke liye
         await axios.post(`${BASE_URL}/auth/refresh`, {}, {
           withCredentials: true 
         });
@@ -45,6 +49,7 @@ apiClient.interceptors.response.use(
 
 export const api = apiClient;
 
+// API Calls
 export const getSellers = async () => {
   const { data } = await apiClient.get('/game/sellers');
   return data.sellers;
@@ -65,10 +70,12 @@ export const getUserStats = async () => {
   return data.stats;
 };
 
+// Asset URL Helper
 export const getAssetUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
   
   const cleanPath = path.replace(/^\/+/, ''); 
+  // ✅ BACKEND_BASE_URL use karega images ke liye (localhost:3000)
   return `${BACKEND_BASE_URL}/${cleanPath}`;
 };

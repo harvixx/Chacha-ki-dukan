@@ -1,5 +1,6 @@
 import { api } from "../../../api/axios.api";
 
+
 // register
 export const register = (data) => {
     return api.post("/auth/register", data);
@@ -16,7 +17,7 @@ export const getMe = () => {
 };
 
 // logout
-export const logout = () => {
+export const logoutapi = () => {
     return api.post("/auth/logout");
 };
 

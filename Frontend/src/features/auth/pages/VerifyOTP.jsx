@@ -2,129 +2,381 @@ import React, { useState } from 'react';
 import { Mail, ShieldCheck, ArrowLeft, Loader2, ChevronRight } from 'lucide-react';
 import { usePassword } from '../hooks/usePassword';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
+// --- Animation Variants ---
+const pageVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.4 } },
+};
+
+const cardVariants = {
+    hidden: { opacity: 0, y: 40, scale: 0.97 },
+    visible: {
+        opacity: 1, y: 0, scale: 1,
+        transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    },
+};
+
+const staggerContainer = {
+    hidden: {},
+    visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+};
+
+const stepVariants = {
+    enter: (dir) => ({ opacity: 0, x: dir === 'forward' ? 40 : -40 }),
+    center: { opacity: 1, x: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } },
+    exit: (dir) => ({ opacity: 0, x: dir === 'forward' ? -40 : 40, transition: { duration: 0.25, ease: 'easeIn' } }),
+};
+
+const errorVariants = {
+    hidden: { opacity: 0, y: -8, scale: 0.97 },
+    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25 } },
+    exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
+};
+
+// --- Component ---
 const VerifyOtp = () => {
-    // UI State: 1 for Email, 2 for OTP
-    const [step, setStep] = useState(1); 
-    const [email, setEmail] = useState("");
-    const [otp, setOtp] = useState("");
+    const [step, setStep] = useState(1);
+    const [direction, setDirection] = useState('forward');
+    const [email, setEmail] = useState('');
+    const [otp, setOtp] = useState('');
 
     const navigate = useNavigate();
     const { handleSendOtp, handleVerifyOtp, loading, error } = usePassword();
 
-    // 1. Send OTP Logic
+    const goToStep2 = () => { setDirection('forward'); setStep(2); };
+    const goToStep1 = () => { setDirection('backward'); setStep(1); };
+
     const onSendOtp = async (e) => {
         e.preventDefault();
         const success = await handleSendOtp(email);
-        if (success) setStep(2); // Email success hote hi OTP field dikhao
+        if (success) goToStep2();
     };
 
-    // 2. Verify OTP Logic
     const onVerifyOtp = async (e) => {
         e.preventDefault();
-        // handleVerifyOtp internally navigate kar dega Reset Password page par
         await handleVerifyOtp(email, otp);
     };
 
+    // Shared input style
+    const inputStyle = {
+        width: '100%',
+        boxSizing: 'border-box',
+        background: '#07090f',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '16px',
+        padding: '14px 20px',
+        fontSize: '14px',
+        color: '#ffffff',
+        outline: 'none',
+        transition: 'border-color 0.2s',
+    };
+
+    const btnStyle = (disabled) => ({
+        width: '100%',
+        padding: '15px',
+        borderRadius: '16px',
+        border: 'none',
+        background: disabled ? '#1e293b' : '#2563eb',
+        color: disabled ? '#475569' : '#ffffff',
+        boxShadow: disabled ? 'none' : '0 8px 24px rgba(37,99,235,0.25)',
+        fontSize: '14px',
+        fontWeight: 700,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        transition: 'background 0.2s',
+    });
+
     return (
-        <div className="min-h-screen bg-[#000000] text-white flex items-center justify-center p-6 selection:bg-blue-500">
-            {/* Background Glow */}
-            <div className="fixed top-0 right-0 w-[300px] h-[300px] bg-blue-600/10 blur-[120px] -z-10"></div>
-            
-            <div className="relative w-full max-w-md p-8 overflow-hidden border shadow-2xl bg-white/5 border-white/10 rounded-3xl backdrop-blur-xl">
-                
+        /*
+         * ROOT FIX: position fixed + inset 0
+         * min-h-screen scroll karata hai aur neeche white strip dikhata hai
+         * fixed + inset: 0 = viewport ke barabar lock, koi scroll nahi
+         */
+        <motion.div
+            variants={pageVariants}
+            initial="hidden"
+            animate="visible"
+            style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: '#000000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '24px',
+                overflow: 'hidden',
+                userSelect: 'none',
+            }}
+        >
+            {/* Background glows */}
+            <div style={{
+                position: 'absolute', top: 0, right: 0,
+                width: '420px', height: '420px',
+                background: 'radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%)',
+                filter: 'blur(40px)', pointerEvents: 'none',
+            }} />
+            <div style={{
+                position: 'absolute', bottom: 0, left: 0,
+                width: '300px', height: '300px',
+                background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)',
+                filter: 'blur(60px)', pointerEvents: 'none',
+            }} />
+
+            {/* Card */}
+            <motion.div
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                style={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: '448px',
+                    padding: '32px',
+                    overflow: 'hidden',
+                    borderRadius: '24px',
+                    background: 'rgba(10, 12, 20, 0.95)',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(59,130,246,0.05) inset',
+                }}
+            >
+                {/* Top gradient bar */}
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '1px',
+                    background: 'linear-gradient(90deg, transparent, rgba(59,130,246,0.5), transparent)',
+                }} />
+
                 {/* Back Button */}
-                <button 
-                    onClick={() => step === 1 ? navigate('/login') : setStep(1)} 
-                    className="flex items-center gap-2 mb-8 transition-colors text-slate-500 hover:text-blue-400 group"
+                <motion.button
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25, duration: 0.3 }}
+                    onClick={() => step === 1 ? navigate('/login') : goToStep1()}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        marginBottom: '28px', background: 'none', border: 'none',
+                        cursor: 'pointer', color: '#64748b', padding: 0,
+                        transition: 'color 0.2s', fontSize: '14px',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#60a5fa'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
                 >
-                    <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" /> 
-                    <span className="text-sm font-hindi">{step === 1 ? "लॉगिन पर वापस" : "ईमेल बदलें"}</span>
-                </button>
+                    <motion.span whileHover={{ x: -3 }} transition={{ type: 'spring', stiffness: 400 }}>
+                        <ArrowLeft size={17} color="currentColor" />
+                    </motion.span>
+                    <span style={{ fontFamily: "'Noto Sans Devanagari', sans-serif" }}>
+                        {step === 1 ? 'लॉगिन पर वापस' : 'ईमेल बदलें'}
+                    </span>
+                </motion.button>
 
-                {/* --- STEP 1: SEND OTP --- */}
-                {step === 1 && (
-                    <form onSubmit={onSendOtp} className="space-y-6 duration-300 animate-in fade-in zoom-in">
-                        <div className="mb-8 text-center">
-                            <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
-                                <Mail className="text-blue-500" size={28} />
-                            </div>
-                            <h2 className="text-2xl font-bold tracking-tight font-hindi">पासवर्ड भूल गए?</h2>
-                            <p className="mt-1 text-sm text-slate-400">अपना ईमेल डालें, हम OTP भेजेंगे</p>
-                        </div>
+                {/* Step Content */}
+                <div style={{ position: 'relative', overflow: 'hidden', minHeight: '320px' }}>
+                    <AnimatePresence mode="wait" custom={direction}>
 
-                        <div className="space-y-2">
-                            <label className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black ml-1">Email Address</label>
-                            <input 
-                                type="email" 
-                                value={email} 
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-[#0a0f1d] border border-white/5 rounded-2xl py-4 px-5 focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all placeholder:text-slate-800"
-                                placeholder="name@example.com" 
-                                required
-                            />
-                        </div>
-
-                        <button 
-                            disabled={loading || !email} 
-                            className="flex items-center justify-center w-full gap-2 py-4 font-bold transition-all bg-blue-600 shadow-lg hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 rounded-2xl active:scale-95 shadow-blue-600/20"
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : <>Send OTP <ChevronRight size={18} /></>}
-                        </button>
-                    </form>
-                )}
-
-                {/* --- STEP 2: VERIFY OTP --- */}
-                {step === 2 && (
-                    <form onSubmit={onVerifyOtp} className="space-y-6 duration-300 animate-in slide-in-from-right">
-                        <div className="mb-8 text-center">
-                            <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
-                                <ShieldCheck className="text-blue-500" size={28} />
-                            </div>
-                            <h2 className="text-2xl font-bold tracking-tight font-hindi">OTP दर्ज करें</h2>
-                            <p className="mt-1 text-sm text-slate-400">Sent to: <span className="font-medium text-blue-400">{email}</span></p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black ml-1 text-center block">Enter 6-Digit Code</label>
-                            <input 
-                                type="text" 
-                                maxLength="6" 
-                                value={otp} 
-                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                                className="w-full bg-[#0a0f1d] border border-white/5 rounded-2xl py-4 text-center text-3xl font-black tracking-[0.4em] focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all"
-                                placeholder="000000" 
-                                required
-                            />
-                        </div>
-
-                        <button 
-                            disabled={loading || otp.length < 6} 
-                            className="flex items-center justify-center w-full gap-2 py-4 font-bold transition-all bg-blue-600 shadow-lg hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 rounded-2xl active:scale-95 shadow-blue-600/20"
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : "Verify OTP"}
-                        </button>
-
-                        <div className="text-center">
-                            <button 
-                                type="button" 
-                                onClick={() => handleSendOtp(email)} 
-                                className="text-xs font-bold tracking-widest text-blue-500 uppercase transition-colors hover:text-blue-400"
+                        {step === 1 ? (
+                            <motion.form
+                                key="step1"
+                                custom={direction}
+                                variants={stepVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                onSubmit={onSendOtp}
+                                style={{ position: 'absolute', width: '100%' }}
                             >
-                                Resend OTP
-                            </button>
-                        </div>
-                    </form>
-                )}
+                                <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                {/* Error Logic */}
-                {error && (
-                    <div className="p-3 mt-6 border bg-red-500/10 border-red-500/20 rounded-xl animate-shake">
-                        <p className="text-red-500 text-[11px] text-center font-medium uppercase tracking-wider">{error}</p>
-                    </div>
-                )}
-            </div>
-        </div>
+                                    {/* Icon + Heading */}
+                                    <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '8px' }}>
+                                        <motion.div
+                                            initial={{ scale: 0.5, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
+                                            style={{
+                                                width: '64px', height: '64px',
+                                                background: 'rgba(37,99,235,0.1)',
+                                                border: '1px solid rgba(59,130,246,0.2)',
+                                                boxShadow: '0 0 24px rgba(59,130,246,0.15)',
+                                                borderRadius: '16px',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                margin: '0 auto 20px',
+                                            }}
+                                        >
+                                            <Mail color="#3b82f6" size={26} />
+                                        </motion.div>
+                                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ffffff', margin: 0, fontFamily: "'Noto Sans Devanagari', sans-serif" }}>
+                                            पासवर्ड भूल गए?
+                                        </h2>
+                                        <p style={{ marginTop: '6px', fontSize: '14px', color: '#94a3b8' }}>अपना ईमेल डालें, हम OTP भेजेंगे</p>
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#64748b', fontWeight: 900, marginLeft: '4px' }}>
+                                            Email Address
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="name@example.com"
+                                            required
+                                            style={inputStyle}
+                                            onFocus={(e) => (e.target.style.borderColor = 'rgba(59,130,246,0.45)')}
+                                            onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.06)')}
+                                        />
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants}>
+                                        <motion.button
+                                            type="submit"
+                                            disabled={loading || !email}
+                                            whileHover={!loading && email ? { scale: 1.02 } : {}}
+                                            whileTap={!loading && email ? { scale: 0.97 } : {}}
+                                            style={btnStyle(loading || !email)}
+                                        >
+                                            {loading
+                                                ? <Loader2 className="animate-spin" size={20} />
+                                                : <><span>Send OTP</span><ChevronRight size={17} /></>
+                                            }
+                                        </motion.button>
+                                    </motion.div>
+
+                                </motion.div>
+                            </motion.form>
+
+                        ) : (
+
+                            <motion.form
+                                key="step2"
+                                custom={direction}
+                                variants={stepVariants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                onSubmit={onVerifyOtp}
+                                style={{ position: 'absolute', width: '100%' }}
+                            >
+                                <motion.div variants={staggerContainer} initial="hidden" animate="visible" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                                    {/* Icon + Heading */}
+                                    <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '8px' }}>
+                                        <motion.div
+                                            initial={{ scale: 0.5, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
+                                            style={{
+                                                width: '64px', height: '64px',
+                                                background: 'rgba(37,99,235,0.1)',
+                                                border: '1px solid rgba(59,130,246,0.2)',
+                                                boxShadow: '0 0 24px rgba(59,130,246,0.15)',
+                                                borderRadius: '16px',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                margin: '0 auto 20px',
+                                            }}
+                                        >
+                                            <ShieldCheck color="#3b82f6" size={26} />
+                                        </motion.div>
+                                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ffffff', margin: 0, fontFamily: "'Noto Sans Devanagari', sans-serif" }}>
+                                            OTP दर्ज करें
+                                        </h2>
+                                        <p style={{ marginTop: '6px', fontSize: '14px', color: '#94a3b8' }}>
+                                            Sent to: <span style={{ color: '#60a5fa', fontWeight: 500 }}>{email}</span>
+                                        </p>
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#64748b', fontWeight: 900, textAlign: 'center' }}>
+                                            Enter 6-Digit Code
+                                        </label>
+                                        <input
+                                            type="text"
+                                            maxLength="6"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                            placeholder="000000"
+                                            required
+                                            style={{
+                                                ...inputStyle,
+                                                textAlign: 'center',
+                                                fontSize: '28px',
+                                                fontWeight: 900,
+                                                letterSpacing: '0.4em',
+                                                padding: '16px 20px',
+                                            }}
+                                            onFocus={(e) => (e.target.style.borderColor = 'rgba(59,130,246,0.45)')}
+                                            onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.06)')}
+                                        />
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants}>
+                                        <motion.button
+                                            type="submit"
+                                            disabled={loading || otp.length < 6}
+                                            whileHover={!loading && otp.length === 6 ? { scale: 1.02 } : {}}
+                                            whileTap={!loading && otp.length === 6 ? { scale: 0.97 } : {}}
+                                            style={btnStyle(loading || otp.length < 6)}
+                                        >
+                                            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verify OTP'}
+                                        </motion.button>
+                                    </motion.div>
+
+                                    <motion.div variants={itemVariants} style={{ textAlign: 'center' }}>
+                                        <motion.button
+                                            type="button"
+                                            onClick={() => handleSendOtp(email)}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            style={{
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                                color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase',
+                                                fontSize: '11px', letterSpacing: '0.15em',
+                                                transition: 'color 0.2s',
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.color = '#60a5fa'}
+                                            onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
+                                        >
+                                            Resend OTP
+                                        </motion.button>
+                                    </motion.div>
+
+                                </motion.div>
+                            </motion.form>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Error */}
+                <AnimatePresence mode="wait">
+                    {error && (
+                        <motion.div
+                            key="error"
+                            variants={errorVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            style={{
+                                padding: '12px', marginTop: '20px', borderRadius: '12px',
+                                background: 'rgba(239,68,68,0.08)',
+                                border: '1px solid rgba(239,68,68,0.2)',
+                            }}
+                        >
+                            <p style={{ fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ef4444', textAlign: 'center', fontWeight: 500, margin: 0 }}>
+                                {error}
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+        </motion.div>
     );
 };
 
