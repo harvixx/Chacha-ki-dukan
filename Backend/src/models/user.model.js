@@ -28,7 +28,20 @@ const userSchema = new mongoose.Schema(
             maxlength: 100,
             select: false,
         },
-
+        forgetPassword: {
+            resetOtp: {
+                type: String,
+                default: undefined
+            },
+            resetOtpExpiry: {
+                type: Date,
+                default: undefined
+            },
+            isOtpVerified: {
+                type: Boolean,
+                default: false
+            }
+        },
         verified: {
             type: Boolean,
             default: false,
@@ -90,7 +103,7 @@ const userSchema = new mongoose.Schema(
 
 // 🔐 Hash password before saving
 userSchema.pre("save", async function () {
-    if (!this.isModified("password")) return ;
+    if (!this.isModified("password")) return;
 
     this.password = await bcrypt.hash(this.password, 10);
 

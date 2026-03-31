@@ -109,6 +109,10 @@ const Login = () => {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between px-1">
                 <label htmlFor="password" className="text-[10px] tracking-widest uppercase font-label text-on-surface-variant">पासवर्ड (Password)</label>
+                {/* ✅ FORGOT PASSWORD NAVIGATION ADDED HERE */}
+                <Link to="/forgot-password" size="sm" className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-tighter">
+                  भूल गए? (Forgot?)
+                </Link>
               </div>
               <div className="relative group">
                 <Lock className="absolute w-4 h-4 transition-colors duration-300 -translate-y-1/2 left-3.5 top-1/2 text-outline group-focus-within:text-primary group-focus-within:scale-110" />

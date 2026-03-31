@@ -32,7 +32,7 @@ export const register = async (req, res) => {
 
     const verificationUrl = `${process.env.BASE_URL}/verify-email?token=${emailToken}`;
 
-     sendEmail({
+    sendEmail({
       to: user.email,
       subject: "Verify your email – Chacha Ki Dukan 🛒🚀",
       html: `
@@ -190,10 +190,10 @@ export const login = async (req, res) => {
 
       const verificationUrl = `${process.env.BASE_URL}/verify-email?token=${emailToken}`;
 
-       sendEmail({
-      to: user.email,
-      subject: "Verify your email – Chacha Ki Dukan 🛒🚀",
-      html: `
+      sendEmail({
+        to: user.email,
+        subject: "Verify your email – Chacha Ki Dukan 🛒🚀",
+        html: `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #050810; color: #ffffff; border-radius: 20px; border: 1px solid #1e293b;">
         <div style="text-align: center; margin-bottom: 30px;">
           <h1 style="color: #3b82f6; margin-bottom: 10px;">Chacha Ki Dukan 🛒</h1>
@@ -233,7 +233,7 @@ export const login = async (req, res) => {
         </p>
       </div>
     `
-    })
+      })
 
       return res.status(403).json({
         message: "Account not verified. A new verification link has been sent to your email.",
@@ -488,5 +488,94 @@ export const resendEmail = async (req, res) => {
       message: "Internal server error",
       success: false,
     });
+  }
+};
+export const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found", success: false });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // ✅ FIXED: Nested path use karo
+    user.forgetPassword.resetOtp = crypto.createHash("sha256").update(otp).digest("hex");
+    user.forgetPassword.resetOtpExpiry = Date.now() + 15 * 60 * 1000;
+    user.forgetPassword.isOtpVerified = false; 
+
+    await user.save();
+
+    await sendEmail({
+      to: user.email,
+      subject: "Password Reset OTP - Chacha Ki Dukan 🛒",
+      html: `<h1>OTP: ${otp}</h1><p>Ye OTP sirf 15 min tak valid hai.</p>`
+    });
+
+    return res.status(200).json({ message: "OTP sent to email", success: true });
+
+  } catch (error) {
+    console.error("SEND OTP ERROR:", error);
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+// 2. Verify OTP
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await User.findOne({ email });
+
+    // ✅ FIXED: Check nested resetOtp
+    if (!user || !user.forgetPassword?.resetOtp) {
+      return res.status(400).json({ message: "Invalid request", success: false });
+    }
+
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+    // ✅ FIXED: Compare nested fields
+    if (user.forgetPassword.resetOtp !== hashedOtp || user.forgetPassword.resetOtpExpiry < Date.now()) {
+      return res.status(400).json({ message: "OTP is expired or invalid!", success: false });
+    }
+
+    user.forgetPassword.isOtpVerified = true;
+    user.forgetPassword.resetOtp = undefined; // Security: Use hote hi delete
+    
+    await user.save();
+
+    return res.status(200).json({ message: "OTP verified successfully!", success: true });
+
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+// 3. Reset Password
+export const resetPasswordWithOTP = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const user = await User.findOne({ email });
+
+    // ✅ FIXED: Check nested verification flag
+    if (!user || !user.forgetPassword?.isOtpVerified) {
+      return res.status(403).json({ message: "Verify OTP first!", success: false });
+    }
+
+    user.password = newPassword;
+    
+    // ✅ FIXED: Sab clear kar do reset ke baad
+    user.forgetPassword.isOtpVerified = false;
+    user.forgetPassword.resetOtpExpiry = undefined;
+    
+    // Security: Kill all active sessions
+    user.sessions = []; 
+
+    await user.save();
+    return res.status(200).json({ message: "Password changed successfully", success: true });
+
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", success: false });
   }
 };
